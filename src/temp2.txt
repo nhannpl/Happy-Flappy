@@ -1,0 +1,215 @@
+import React, { useEffect, useState, useRef } from "react";
+import * as faceapi from "face-api.js";
+import Bird from './components/Bird';
+import Pipes from './components/Pipes';
+import './App.css';
+
+export default function App() {
+  //console.log("app is run");
+  const videoRef = useRef(null);
+  const faceCanvasRef = useRef(null);
+  const mainCanvas = useRef(null);
+  const state_constants = require('./constants.json');
+
+  const [isModelsLoaded, setModelsLoaded] = useState(false);
+  const [birdPosition, setBirdPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2, width: state_constants[0].player.width, height: state_constants[0].player.height });
+ // console.log("window width , height "+ window.innerWidth+"; "+ window.innerHeight)
+ // console.log("bird initial pos "+ birdPosition.x+"; "+birdPosition.y)
+  const [birdVelocity, setBirdVelocity] = useState(0);  // Bird's velocity due to gravity
+
+  const [pipes, setPipes] = useState([]);
+  const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
+
+  const gravity = 0.5;
+  const lift = -10; // Negative to counter gravity
+  const pipeWidth = 50;
+  const pipeGap = 10;
+
+
+
+  // Load Face API models
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+          faceapi.nets.faceExpressionNet.loadFromUri("/models"),
+        ]);
+        console.log("models loaded");
+        setModelsLoaded(true);
+      } catch (error) {
+        console.error("Error loading models:", error);
+      }
+    };
+    loadModels();
+  }, []);
+
+  // Start video feed
+  useEffect(() => {
+    const startVideo = async () => {
+      if (videoRef) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoRef.current.srcObject = stream;
+      }
+    };
+    startVideo();
+  }, []);
+
+  // Face detection
+  useEffect(() => {
+    if (!isModelsLoaded || videoRef.current === null) return;
+
+    const face_canvas = faceCanvasRef.current;
+    const video = videoRef.current;
+    const displaySize = { width: video.offsetWidth, height: video.offsetHeight };
+    const context = face_canvas.getContext("2d");
+
+    face_canvas.width = displaySize.width;
+    face_canvas.height = displaySize.height;
+
+    const interval = setInterval(async () => {
+      const detections = await faceapi
+        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceExpressions();
+
+      const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
+      context.clearRect(0, 0, face_canvas.width, face_canvas.height);
+      faceapi.draw.drawDetections(face_canvas, resizedDetections);
+      faceapi.draw.drawFaceLandmarks(face_canvas, resizedDetections);
+      faceapi.draw.drawFaceExpressions(face_canvas, resizedDetections);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isModelsLoaded]);
+
+	const jump = () => {
+		if (!gameOver && gameStarted) {
+			setBirdPosition((prev) => ({ ...prev, y: prev.y - 60 }));
+		} else if (!gameOver && !gameStarted) {
+			// Start the game on the first jump
+			setGameStarted(true);
+		} else {
+			// Restart the game
+			setBirdPosition({ x: 50, y: 200 });
+			setPipes([]);
+			setGameOver(false);
+			setGameStarted(true);
+		}
+	};
+
+	const checkCollision = () => {
+		const birdTop = birdPosition.y;
+		const birdBottom = birdPosition.y + 50;
+		const birdLeft = birdPosition.x;
+		const birdRight = birdPosition.x + 50;
+
+		pipes.forEach((pipe) => {
+			const pipeTop = pipe.y;
+			const pipeBottom = 0;
+			const pipeLeft = pipe.x;
+			const pipeRight = pipe.x + 50;
+
+			const isColliding =
+				 pipeLeft<birdRight  &&
+         birdRight < pipeRight &&
+         
+         pipeBottom< birdBottom && 
+				birdBottom < pipeTop;
+
+			if (isColliding) {
+				if (birdLeft > pipeLeft && birdRight < pipeRight && birdBottom < pipeBottom) {
+					// Bird has crashed through the pipe, increase score
+					setScore((prevScore) => prevScore + 1);
+				} else {
+					// Bird has hit the pipe, end the game
+					setGameOver(true);
+					setGameStarted(false);
+				}
+			}
+		});
+
+		// Check if bird is out of the screen vertically
+		if (birdBottom > 800 || birdTop < -170) {
+			// Bird is out of bounds, end the game
+			setGameOver(true);
+			setGameStarted(false);
+		}
+	};
+
+	useEffect(() => {
+		checkCollision();
+	}, [birdPosition, pipes, gameOver]);
+
+	useEffect(() => {
+		const gravity = setInterval(() => {
+			setBirdPosition((prev) => ({ ...prev, y: prev.y + 5 }));
+			checkCollision();
+		}, 30);
+
+		const pipeGenerator = setInterval(() => {
+			if (!gameOver && gameStarted) {
+				setPipes((prev) => [
+					...prev,
+					{ x: 400, y: Math.floor(Math.random() * 300) },
+				]);
+			}
+		}, 2000);
+
+		const pipeMove = setInterval(() => {
+			if (!gameOver && gameStarted) {
+				setPipes((prev) =>
+					prev.map((pipe) => ({ ...pipe, x: pipe.x - 5 }))
+				);
+			}
+		}, 30);
+
+		return () => {
+			clearInterval(gravity);
+			clearInterval(pipeGenerator);
+			clearInterval(pipeMove);
+		};
+	}, [gameOver, gameStarted]);
+
+
+
+  return (
+    <div className="App" ref={mainCanvas}>
+      <video className="video" ref={videoRef} autoPlay muted style={{ position: "absolute", top: 0, left: 0, width: "30%" }}></video>
+      <canvas ref={faceCanvasRef} style={{ position: "absolute", top: 0, left: 0 }}></canvas>
+      
+      <div className="Game" onClick={jump}>
+        {gameStarted === false && (
+          <center>
+            <button>Start</button>
+          </center>
+        )}
+
+        <Bird birdPosition={birdPosition} />
+        <h1> {birdPosition.x}; {birdPosition.y}</h1>
+        <h2> {score}</h2>
+
+     
+	
+			{pipes.map((pipe, index) => (
+				<Pipes key={index} pipePosition={pipe} />
+			))}
+			{gameOver && (
+				<center>
+					<div className="game-over-message">
+						Game Over!
+						<br />
+						<p style={{ backgroundColor: 'blue', padding: "2px 6px", borderRadius: '5px' }}>Click anywhere to Restart</p>
+					</div>
+				</center>
+			)}
+
+      </div>
+    </div>
+  );
+}

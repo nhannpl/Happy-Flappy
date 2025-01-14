@@ -1,0 +1,15 @@
+
+{
+    "PLAYER":{
+    "WIDTH": 50,
+    "HEIGHT":50,
+    "GRAVITY":30,
+    "JUMP":50
+    },
+    
+    "PIPE":{
+    "WIDTH": 80,
+    "MAX_HEIGHT":500,
+    "SPEED":5
+    }
+}
