@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/Happy-Flappy/static/css/main.bbebaa9f.css",
+    "main.js": "/Happy-Flappy/static/js/main.b7f53a9b.js",
+    "static/js/488.f9ad5bcb.chunk.js": "/Happy-Flappy/static/js/488.f9ad5bcb.chunk.js",
+    "static/media/Image.png": "/Happy-Flappy/static/media/Image.6565c0fa364817ee8976.png",
+    "index.html": "/Happy-Flappy/index.html",
+    "main.bbebaa9f.css.map": "/Happy-Flappy/static/css/main.bbebaa9f.css.map",
+    "main.b7f53a9b.js.map": "/Happy-Flappy/static/js/main.b7f53a9b.js.map",
+    "488.f9ad5bcb.chunk.js.map": "/Happy-Flappy/static/js/488.f9ad5bcb.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.bbebaa9f.css",
+    "static/js/main.b7f53a9b.js"
+  ]
+}
