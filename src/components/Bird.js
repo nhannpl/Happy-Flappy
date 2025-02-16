@@ -1,6 +1,6 @@
 // Bird.js
 import React from "react";
-import player from "../flappy_bird.gif"
+import player from "../res/Image.png"
  const Bird = ({ birdPosition }) => {
 
 	return (

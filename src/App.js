@@ -6,7 +6,6 @@ import './App.css';
 import config from "./constants.json"
 
 export default function App() {
-  //console.log("app is run");
 
   const PLAYER_WIDTH= config.PLAYER.WIDTH;
   const PLAYER_HEIGHT = config.PLAYER.HEIGHT;
@@ -33,6 +32,7 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [isHappy, setIsHappy] = useState(false)
+  const [pipesPassed, setPipesPassed] = useState(0)
 
   // Load Face API models
   useEffect(() => {
@@ -100,6 +100,7 @@ export default function App() {
     
     setPipes([]);
     setScore(0);
+    setPipesPassed(0);
     setGameOver(false);
     setGameStarted(true);
     console.log("game start is "+ gameStarted);
@@ -176,7 +177,7 @@ export default function App() {
       {
        let pipe= pipes[i];
      
-      const pipeTop = pipe.y;
+      const pipeTop = pipe.bottom_height;
       const pipeBottom = 0;
       const pipeLeft = pipe.x;
       const pipeRight = pipe.x + PIPE_WIDTH;
@@ -222,7 +223,7 @@ export default function App() {
   //  console.log("apply gravity and update bird position");
 
     const gravityInterval = setInterval(() => {
-      if (gameOver== false && gameStarted== true) {
+      if (gameOver== false && gameStarted== true && isHappy==false) {
 
       console.log("bird is FALLING, gamestarted ?",gameStarted)
       setBirdPosition((prevPosition) => {
@@ -241,12 +242,27 @@ export default function App() {
       //console.log("goig to genertate more pipe, gameOver? "+ gameOver+ " game started? "+gameStarted)
       if (gameOver==false && gameStarted==true) {
         //console.log("generating pips")
-        setPipes((prev) => [
-          ...prev,
-          { x: window.innerWidth, y: Math.floor(Math.random() * (PIPE_MAX_HEIGHT)) },
-        ]);
+        setPipes((prev) => {
+          const bottom_height = Math.floor(Math.random() * PIPE_MAX_HEIGHT);
+          const up_height = window.innerHeight - bottom_height -(config.PIPE.MIN_MIDDLE_SPACE+ Math.random() * config.PIPE.MIDDLE_SPACE);
+          const x_pos =             window.innerWidth;// - Math.random() * config.PIPE.HORIZONTAL_SPACE
+          //   prev.length > 0
+          //     ? prev[prev.length - 1].x + config.PIPE.MIN_HORIZONTAL_SPACE
+          //     : window.innerWidth
+          // );
+          console.log("new pipe at ", x_pos)
+          
+          return [
+            ...prev,
+            {
+              x: x_pos,
+              bottom_height: bottom_height,
+              up_height: up_height,
+            },
+          ];
+        });
       }
-    }, 1000);
+    }, 4000);
 
 
 
@@ -261,8 +277,26 @@ export default function App() {
     const pipeMove = setInterval(() => {
       if (!gameOver && gameStarted) {
         setPipes((prev) =>
-          prev.map((pipe) => ({ ...pipe, x: pipe.x - PIPE_SPEED })) // Move pipes
+          prev.map((pipe) => ({ ...pipe, x: pipe.x -(PIPE_SPEED )})) // Move pipes
         );
+    
+        let i=0;
+        let n= pipes.length;
+        let count=0;
+        while (i<n)
+        {
+          if (pipes[i].x< birdPosition.x)
+          {
+            count++;
+           
+          }
+          else{
+           // break;
+          }
+          i++;
+          
+        }
+        setPipesPassed(count);
       }
     }, 30);
     return ()=>
@@ -286,9 +320,8 @@ export default function App() {
 
         <h1 style={{position:"absolute", left:`${birdPosition.x}px`, top:`${birdPosition.y}px`}}>.,,</h1>
 
-
-        <h1> {birdPosition.x}; {birdPosition.y}</h1>
         <h2> Your scores: {score}</h2>
+        <h2> Number of pipes passed: {pipesPassed}</h2>
 
         {pipes.map((pipe, index) => (
           <Pipes key={index} pipePosition={pipe} />

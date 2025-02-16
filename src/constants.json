@@ -3,13 +3,17 @@
     "PLAYER":{
     "WIDTH": 50,
     "HEIGHT":50,
-    "GRAVITY":30,
-    "JUMP":50
+    "GRAVITY":15,
+    "JUMP":40
     },
     
     "PIPE":{
     "WIDTH": 80,
-    "MAX_HEIGHT":500,
-    "SPEED":5
+    "MAX_HEIGHT":800,
+    "SPEED":10,
+    "MIDDLE_SPACE": 300,
+    "MIN_MIDDLE_SPACE":300,
+    "MIN_HORIZONTAL_SPACE": 100,
+    "HORIZONTAL_SPACE": 50
     }
 }
