@@ -33,16 +33,19 @@ export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [isHappy, setIsHappy] = useState(false)
   const [pipesPassed, setPipesPassed] = useState(0)
+  const models_path = `${process.env.PUBLIC_URL}/models`
 
   // Load Face API models
   useEffect(() => {
+
     const loadModels = async () => {
       try {
+
         await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-          faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
-          faceapi.nets.faceExpressionNet.loadFromUri("/models"),
+          faceapi.nets.tinyFaceDetector.loadFromUri(models_path),
+          faceapi.nets.faceLandmark68Net.loadFromUri(models_path),
+          faceapi.nets.faceRecognitionNet.loadFromUri(models_path),
+          faceapi.nets.faceExpressionNet.loadFromUri(models_path),
         ]);
         console.log("models loaded");
         setModelsLoaded(true);
@@ -119,6 +122,7 @@ export default function App() {
     face_canvas.height = displaySize.height;
 
     const interval = setInterval(async () => {
+
       const detections = await faceapi
         .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
@@ -140,13 +144,14 @@ export default function App() {
             
           }
         }
+        console.log(detections)
       }
     
       const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
       context.clearRect(0, 0, face_canvas.width, face_canvas.height);
-      //faceapi.draw.drawDetections(face_canvas, resizedDetections);
-      //faceapi.draw.drawFaceLandmarks(face_canvas, resizedDetections);
+      faceapi.draw.drawDetections(face_canvas, resizedDetections);
+      faceapi.draw.drawFaceLandmarks(face_canvas, resizedDetections);
       faceapi.draw.drawFaceExpressions(face_canvas, resizedDetections);
     }, 100);
 
